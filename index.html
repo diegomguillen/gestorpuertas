@@ -498,6 +498,23 @@
                 }
             };
         }
+		/**
+		 * Convierte una cadena de fecha/hora (del input) a un formato delimitado
+		 * @param {string} dateString - Ej: "2025-11-07T18:00"
+		 * @returns {string} - Ej: "25;11;7;18;0" (Año;Mes;Día;Hora;Min)
+		 */
+		function formatForPICDelimited(dateString) {
+			const d = new Date(dateString);
+			if (isNaN(d)) return "00;0;0;0;0"; // Caso de error
+
+			const yy = d.getFullYear().toString().slice(-2); // '25'
+			const mm = (d.getMonth() + 1).toString(); // '11' (getMonth() es 0-11)
+			const dd = d.getDate().toString(); // '7'
+			const hh = d.getHours().toString(); // '18'
+			const mi = d.getMinutes().toString(); // '0'
+
+			return `${yy};${mm};${dd};${hh};${mi}`;
+		}		
 
         // --- FUNCIONES CRUD (Administrar) ---
         
@@ -1049,7 +1066,8 @@
 
         // --- LÓGICA DE SMS Y SINCRONIZACIÓN ---
         
-        async function generateSmsAndConfirm() {
+        /*
+		async function generateSmsAndConfirm() {
             if (currentWorkflow.usuarios.length === 0) {
                 alert("Debes seleccionar al menos un usuario.");
                 return;
@@ -1107,7 +1125,69 @@
             setTimeout(() => {
                 showSyncModal();
             }, 1000); 
-        }
+        }*/
+		async function generateSmsAndConfirm() {
+				if (currentWorkflow.usuarios.length === 0) {
+					alert("Debes seleccionar al menos un usuario.");
+					return;
+				}
+				
+				// 1. Obtener datos
+				const puerta = await getFromDb('puertas', currentWorkflow.puertaId);
+				const grupo = await getFromDb('gruposHorarios', currentWorkflow.grupoId);
+				let horarioStr = '';
+
+				// --- LÓGICA DE HORARIO (ACTUALIZADA) ---
+				if (grupo.type === 'timestamp') {
+					// TIPO 1: Fecha Única (Formato PIC Delimitado)
+					
+					// Usamos la función helper que acabamos de añadir
+					const picInicio = formatForPICDelimited(grupo.fechaInicio);
+					const picFin = formatForPICDelimited(grupo.fechaFin);
+					
+					// CAMBIO: Formato: TS;YY;MM;DD;HH;MI;YY;MM;DD;HH;MI
+					horarioStr = `TS;${picInicio};${picFin}`;
+					
+				} else {
+					// TIPO 2: Recurrente (Formato PIC Delimitado)
+					const diasMap = ['1', '2', '3', '4', '5', '6', '7']; // 0=L -> '1', 6=D -> '7'
+					const diasStr = grupo.dias.sort((a,b) => a - b).map(d => diasMap[d]).join('');
+					
+					// CAMBIO: Separamos las horas y minutos
+					const [startHH, startMM] = grupo.horaInicio.split(':'); // "08:00" -> ["08", "00"]
+					const [endHH, endMM] = grupo.horaFin.split(':');       // "17:00" -> ["17", "00"]
+
+					// CAMBIO: Formato: DIAS;HH;MM;HH;MM
+					horarioStr = `${diasStr};${startHH};${startMM};${endHH};${endMM}`;
+				}
+				// --- FIN DE LÓGICA DE HORARIO ---
+				
+				const usuariosStr = currentWorkflow.usuarios.join('\n');
+				
+				// El formato del SMS ahora usa el 'horarioStr' dinámico
+				const smsBody = `${puerta.idPuerta_password}\n${horarioStr}\n${currentAction}\n${usuariosStr}`;
+				
+				// 3. Lanzar SMS
+				const uri = `sms:?body=${encodeURIComponent(smsBody)}`;
+				
+				// Guardar datos para la sincronización
+				pendingSyncData = {
+					action: currentAction,
+					permisos: currentWorkflow.usuarios.map(userId => ({
+						idUsuario: userId,
+						idPuerta: currentWorkflow.puertaId,
+						idGrupo: currentWorkflow.grupoId
+					}))
+				};
+				
+				// Abrir app de SMS
+				window.location.href = uri;
+				
+				// 4. Mostrar Modal de Sincronización
+				setTimeout(() => {
+					showSyncModal();
+				}, 1000); 
+			}
 
         function showSyncModal() {
             document.getElementById('sync-modal').classList.add('flex');
