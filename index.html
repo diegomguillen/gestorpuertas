@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestor de Puertas</title>
+    <title>LOST CALL OPENER</title>
 
     <!-- --- Iconos y Meta Tags de App --- -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔑</text></svg>">
@@ -34,6 +34,15 @@
 						from { opacity: 0; transform: scale(0.95); }
 						to { opacity: 1; transform: scale(1); }
 				}
+				/* Animación para la barra de progreso (dura 5s) */
+				@keyframes fillProgress {
+					from { width: 0%; }
+					to { width: 100%; }
+				}
+				#loading-progress-bar {
+					/* Ajusta la duración (5s) para que coincida con tu JS */
+					animation: fillProgress 5s linear forwards; 
+				}				
         .contacts-unsupported .contact-picker-button { display: none; }
 				/* Aplicar animación al fondo de los modales cuando se muestran */
 				#sync-modal.flex, #form-modal.flex, #loading-modal.flex {
@@ -41,9 +50,14 @@
 				}
 
 				/* Aplicar animación al contenido (la tarjeta blanca) de los modales */
-				#sync-modal > div, #form-modal > div, #loading-modal > div {
+				#sync-modal > div, #form-modal > div {
 						animation: modalContentIn 0.5s ease-out;
 				}
+				/* Regla específica para el modal de carga */
+				#loading-modal > div {
+						animation: modalContentIn 0.5s ease-out;
+						background-color: transparent !important; /* ¡Forzamos que SÓLO este sea transparente! */
+				}				
 				.form-tab {
 						padding: 8px 16px;
 						border-bottom: 2px solid transparent;
@@ -58,6 +72,33 @@
         /* Estilos para el Modal */
         #sync-modal, #form-modal, #loading-modal { display: none; }
         #sync-modal.flex, #form-modal.flex, #loading-modal.flex { display: flex; }
+		<!--#loading-modal {
+            /* 1. Fondo blanco base */
+            background-color: #ffffff;
+            
+            /* 2. Círculos suaves (color índigo muy claro) */
+            background-image: 
+                /* Círculo grande abajo a la derecha */
+                radial-gradient(circle at 90% 80%, rgba(79, 70, 229, 0.25) 0%, transparent 40%),
+                /* Círculo mediano arriba a la izquierda */
+                radial-gradient(circle at 10% 20%, rgba(79, 70, 229, 0.25) 0%, transparent 30%);
+            
+            /* 3. Asegura que no se repitan */
+            background-repeat: no-repeat;
+        }-->
+		#loading-modal {
+			/* 1. Fondo blanco base */
+			background-color: #ffffff;
+			
+			/* 2. Patrón de líneas (usando un color gris-100) */
+			background-image: repeating-linear-gradient(
+				-45deg,
+				#f4f4f5, /* Color de la línea */
+				#f4f4f5 1px,
+				#ffffff 1px,
+				#ffffff 20px /* Espaciado entre líneas */
+			);
+		}
     </style>
 </head>
 <body class="bg-gray-100">
@@ -331,12 +372,35 @@
     </div>
     
     <!-- Modal de Carga -->
-    <div id="loading-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 items-center justify-center p-5">
-        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm text-center">
-            <h3 class="text-lg font-medium text-gray-900 mb-2">Cargando...</h3>
-            <p class="text-sm text-gray-600">Inicializando base de datos...</p>
-        </div>
-    </div>
+	<div id="loading-modal" class="fixed inset-0 items-center justify-center z-50">
+			
+			<div class="w-full max-w-sm mx-auto text-center flex flex-col h-full justify-between p-6">
+				
+				<div class="flex-shrink-0 text-left text-lg font-medium text-gray-400">
+					LOST CALL OPENER
+				</div>
+
+				<div class="flex-grow flex flex-col justify-center">
+					<img src="modal_carga.gif" alt="Cargando..." class="w-full rounded-lg shadow-lg mx-auto mb-6">
+					<!--<h3 class="text-2xl font-bold text-gray-900">LOST CALL OPENER</h3>-->
+				</div>
+
+				<div class="flex-shrink-0">
+					<p id="loading-modal-message" class="text-lg text-gray-600 mt-2">Inicializando base de datos...</p>
+					
+					<div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden mt-4">
+						<div id="loading-progress-bar" class="bg-indigo-600 h-2.5 rounded-full" style="width: 0%"></div>
+					</div>
+
+					<div class="h-16 w-full border-t border-gray-200 mt-8 flex justify-around items-center text-gray-300">
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6-4a1 1 0 001-1v-1a1 1 0 10-2 0v1a1 1 0 001 1zm5 0a1 1 0 001-1v-1a1 1 0 10-2 0v1a1 1 0 001 1z" /></svg>
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
+					</div>
+				</div>
+
+			</div>
+	</div>
 
     <!-- ============================================= -->
     <!-- JAVASCRIPT (Toda la lógica de la app) -->
@@ -437,10 +501,11 @@
             }
         }
         
-        function showLoading(message) {
-            document.getElementById('loading-modal').querySelector('p').textContent = message;
-            document.getElementById('loading-modal').classList.add('flex');
-        }
+		function showLoading(message) {
+				// Apunta al nuevo ID del párrafo
+				document.getElementById('loading-modal-message').textContent = message;
+				document.getElementById('loading-modal').classList.add('flex');
+		}
         
         function hideLoading() {
             document.getElementById('loading-modal').classList.remove('flex');
@@ -486,12 +551,34 @@
                     permisosStore.createIndex('puertaIdx', 'idPuerta', { unique: false });
                     permisosStore.createIndex('grupoIdx', 'idGrupo', { unique: false });
                 }
-            };
+				};
 
-            request.onsuccess = (event) => {
-                db = event.target.result;
-                console.log("Base de datos abierta con éxito.");
-                hideLoading();
+				request.onsuccess = (event) => {
+							db = event.target.result;
+							console.log("Base de datos abierta con éxito.");
+
+							const msgEl = document.getElementById('loading-modal-message');
+							const minSplashTime = 5000; // Tus 5 segundos totales
+
+							// --- INICIO DE LA SIMULACIÓN DE CARGA ---
+
+							// 1. Inmediatamente después de cargar la DB
+							msgEl.textContent = 'Loading database';
+
+							// 2. A los 1.6 segundos
+							setTimeout(() => {
+								msgEl.textContent = 'Setting interface';
+							}, minSplashTime / 3); 
+
+							// 3. A los 3.3 segundos
+							setTimeout(() => {
+								msgEl.textContent = "Go ahead!";
+							}, (minSplashTime / 3) * 2);
+
+							// Programamos que se oculte el splash DESPUÉS de 5 segundos
+							setTimeout(() => {
+								hideLoading();
+							}, minSplashTime);
                 // Comprobar compatibilidad de API de Contactos
                 if (!('contacts' in navigator && 'ContactsManager' in window)) {
                     document.body.classList.add('contacts-unsupported');
@@ -1506,11 +1593,14 @@
                 request.onerror = (e) => reject(e.target.error);
             });
         }
-        
-
         // --- INICIAR LA APP ---
-        window.onload = initDB;
+		window.onload = () => {
+			// Mostramos el splash inmediatamente
+			showLoading('Inicializando base de datos...');
 
+			// Y LUEGO empezamos a cargar la DB
+			initDB();
+		};
     </script>
 </body>
 </html>
